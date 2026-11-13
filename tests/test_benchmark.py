@@ -15,7 +15,7 @@ class BenchmarkTests(unittest.TestCase):
     def setUp(self):
         self.temporary = tempfile.TemporaryDirectory(prefix="photogrammetry test ")
         self.addCleanup(self.temporary.cleanup)
-        self.base = Path(self.temporary.name)
+        self.base = Path(self.temporary.name).resolve()
         self.video = self.base / "test source video.mp4"
         self.video.write_bytes(b"synthetic test input")
         self.tool = self.base / "fake tool.exe"

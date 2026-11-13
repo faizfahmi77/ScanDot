@@ -171,16 +171,24 @@ class BackendTests(unittest.TestCase):
         self.assertIsInstance(response.json()["detail"], str)
 
     def test_demo_model_cloud(self):
-        result = self.client.post("/api/demo", headers=self.headers)
-        self.assertEqual(result.status_code, 200, result.text)
-        job = result.json()
-        self.assertEqual(job["status"], "completed")
-        self.assertEqual(self.client.post("/api/demo", headers=self.headers).json()["id"], job["id"])
-        cloud = self.client.get(f"/api/jobs/{job['id']}/cloud", headers=self.headers)
-        self.assertEqual(cloud.status_code, 200, cloud.text[:100])
-        self.assertGreater(cloud.json()["total_points"], 0)
-        self.assertLessEqual(len(cloud.json()["points"]), 20000)
-        self.assertEqual(self.client.get(f"/api/jobs/{job['id']}/model", headers=self.headers).status_code, 200)
+        with tempfile.TemporaryDirectory() as directory, patch("backend.app.ROOT", Path(directory)):
+            self.assertEqual(self.client.post("/api/demo", headers=self.headers).status_code, 404)
+            recon = Path(directory) / "data" / "tum-room-5fps-exhaustive" / "reconstruction"
+            recon.mkdir(parents=True)
+            (recon / "manifest.json").write_text(json.dumps({"summary": {"models": []}}), encoding="utf-8")
+            (recon / "selected-sparse.ply").write_text(
+                "ply\nformat ascii 1.0\nelement vertex 1\nproperty float x\n"
+                "property float y\nproperty float z\nend_header\n1 2 3\n", encoding="ascii"
+            )
+            result = self.client.post("/api/demo", headers=self.headers)
+            self.assertEqual(result.status_code, 200, result.text)
+            job = result.json()
+            self.assertEqual(job["status"], "completed")
+            self.assertEqual(self.client.post("/api/demo", headers=self.headers).json()["id"], job["id"])
+            cloud = self.client.get(f"/api/jobs/{job['id']}/cloud", headers=self.headers)
+            self.assertEqual(cloud.status_code, 200, cloud.text[:100])
+            self.assertEqual(cloud.json()["total_points"], 1)
+            self.assertEqual(self.client.get(f"/api/jobs/{job['id']}/model", headers=self.headers).status_code, 200)
 
     def test_worker_normal_and_failure(self):
         job_id = self.upload().json()["id"]
