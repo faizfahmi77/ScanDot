@@ -59,4 +59,4 @@ tools/        Workstation utilities
 
 CI runs the Android build, lint and JVM tests, plus the Python unit tests. It does not exercise a camera, ARCore tracking, GPU reconstruction or measurement accuracy.
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for development checks and [LICENSE](LICENSE) for reuse terms.
+See the [wiki](https://github.com/faizfahmi77/ScanDot/wiki) for installation, capture and troubleshooting guides. See [CONTRIBUTING.md](CONTRIBUTING.md) for development checks and [LICENSE](LICENSE) for reuse terms.
