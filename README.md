@@ -1,40 +1,60 @@
 # ScanDot
 
-An experimental Android app for capturing and viewing 3D point clouds on a supported phone. Capture runs locally with ARCore depth and camera tracking. The viewer lets you rotate, pan and zoom a saved scan.
+[![CI](https://github.com/faizfahmi77/ScanDot/actions/workflows/ci.yml/badge.svg)](https://github.com/faizfahmi77/ScanDot/actions/workflows/ci.yml)
 
-The app does **not** reconstruct ordinary video through photogrammetry on the phone. A separate, experimental Python pipeline in this repository uses FFmpeg and COLMAP for video-based photogrammetry on a workstation.
+ScanDot is an experimental Android app for capturing and viewing 3D point clouds on a supported phone. It combines ARCore camera tracking and depth estimates, saves scans locally, and provides an interactive viewer.
 
-## ScanDot Android app
+The repository also contains a separate video photogrammetry pipeline that runs on a workstation using FFmpeg and COLMAP. **The Android app does not reconstruct ordinary video with photogrammetry on the phone.**
 
-Requirements: JDK 17, Android SDK 36, and a device supporting ARCore and its Depth API. Google Play Services for AR may need to be installed or updated. A camera permission is required.
+## Current status
 
-```powershell
+- Capture, save and reopen point clouds on devices that support ARCore Depth.
+- Rotate, pan and zoom scans in the viewer. An optional full-depth mode interpolates missing depth and can distort surfaces.
+- Prepare video frames and run a sparse or dense COLMAP reconstruction on a workstation.
+
+This is an early prototype. Results can contain gaps, drift and noise; they are not textured meshes or validated measurements. Reflective, transparent and textureless subjects are difficult. Capture quality and device compatibility need further testing.
+
+## Build the Android app
+
+You need JDK 17, Android SDK 36, and an Android device with ARCore Depth support. Camera permission is required; Google Play Services for AR may require installation or an update.
+
+```sh
 cd android-app
-.\gradlew.bat assembleDebug lintDebug testDebugUnitTest
+./gradlew assembleDebug lintDebug testDebugUnitTest
 ```
 
-Install the APK at `app/build/outputs/apk/debug/app-debug.apk` as an update to retain existing app data. On the Scans screen, name the scan, tap **Start scan**, and move slowly around the subject in good light. Save the result and open it under **Results**. The experimental fuller-depth option interpolates data and can distort surfaces.
+On Windows, use `gradlew.bat` in place of `./gradlew`. The debug APK is written to `android-app/app/build/outputs/apk/debug/app-debug.apk`. Install it as an update to preserve existing app data.
 
-Point clouds may have gaps, tracking drift, noise and missing surfaces. They are not textured meshes or validated measurements. Transparent, reflective or textureless subjects are especially challenging.
+In the app, name the scan, tap **Start scan**, and move slowly around the subject in good light. Save it, then open it from **Results**. Scans are stored in the app's private storage; uninstalling the app removes them.
 
-## Video reconstruction
+## Workstation video pipeline
 
-The Python pipeline requires Python 3.12 or newer, FFmpeg, FFprobe, and a compatible COLMAP installation. From the repository root:
+The benchmark requires Python 3.12 or newer, FFmpeg, FFprobe and a compatible COLMAP installation. Dense reconstruction requires a compatible COLMAP configuration. From the repository root:
 
-```powershell
+```sh
 python -m processing.benchmark prepare "path/to/input.mp4" --output "path/to/new-run" --fps 5
-python -m processing.benchmark reconstruct "path/to/new-run" --colmap "path/to/colmap.exe" --dense
+python -m processing.benchmark reconstruct "path/to/new-run" --colmap "path/to/colmap" --dense
+```
+
+The output directory must not already exist. Omit `--dense` for a sparse-only run. See the subcommand `--help` output for options. A successful run does not establish complete or accurate geometry.
+
+To run the Python tests, create a virtual environment and install the test dependencies:
+
+```sh
+python -m pip install -r backend/requirements-lock.txt
 python -m unittest discover -s tests -v
 ```
 
-Dense reconstruction requires a compatible COLMAP configuration. See `python -m processing.benchmark --help` and the individual subcommand help for options. A completed process does not guarantee complete or accurate geometry.
+## Project structure
 
-## Repository layout
+```text
+android-app/  Android capture, local storage and point-cloud viewer
+processing/   Video preparation and COLMAP orchestration
+backend/      Optional local workstation service
+tests/        Python tests with synthetic fixtures
+tools/        Workstation utilities
+```
 
-- `android-app/`: Android capture and point-cloud viewer.
-- `processing/`: video preparation and reconstruction pipeline.
-- `backend/`: optional workstation service.
-- `tests/`: Python tests.
-- `tools/`: workstation utilities.
+CI runs the Android build, lint and JVM tests, plus the Python unit tests. It does not exercise a camera, ARCore tracking, GPU reconstruction or measurement accuracy.
 
-Local captures, credentials, generated outputs and personal notes are excluded by `.gitignore`. Review all files and any existing Git history before publishing; ignore rules do not remove files already tracked.
+See [CONTRIBUTING.md](CONTRIBUTING.md) for development checks and [LICENSE](LICENSE) for reuse terms.

@@ -1,0 +1,5 @@
+# Shell scripts must retain Unix line endings when checked out on Windows.
+android-app/gradlew text eol=lf
+*.sh text eol=lf
+*.bat text eol=crlf
+*.cmd text eol=crlf
