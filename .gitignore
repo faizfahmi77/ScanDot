@@ -1,0 +1,21 @@
+__pycache__/
+*.py[cod]
+.venv/
+data/
+tools/colmap-*/
+tools/*.zip
+tools/colmap-download.json
+.idea/
+.gradle/
+local.properties
+**/build/
+android-app/app/src/debug/assets/connection.json
+artifacts/*.apk
+
+android-app/optional/debug-assets/
+
+# Local project notes, captures and disabled experiments are not for publication.
+/PROJECT_PLAN.md
+/docs/
+/Video/
+/android-app/optional/
