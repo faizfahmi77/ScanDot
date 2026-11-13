@@ -1,5 +1,5 @@
 [CmdletBinding()]
-param([string]$Serial, [switch]$Workstation)
+param([string]$Serial)
 
 $ErrorActionPreference = 'Stop'
 $project = Split-Path -Parent $PSScriptRoot
@@ -12,11 +12,6 @@ if (-not $Serial) {
 }
 & adb -s $Serial install -r $apk
 if ($LASTEXITCODE -ne 0) { throw 'APK installation failed.' }
-if ($Workstation) {
-    & adb -s $Serial reverse tcp:8765 tcp:8765
-    if ($LASTEXITCODE -ne 0) { throw 'USB connection forwarding failed.' }
-}
 & adb -s $Serial shell am start -n com.roomscan.app/.MainActivity
 if ($LASTEXITCODE -ne 0) { throw 'App launch failed.' }
-Write-Output 'RoomScan installed and launched. Choose Scan on this phone for local 3D scanning.'
-if ($Workstation) { Write-Output 'Workstation forwarding enabled. Use tools/start-server.ps1 for video reconstruction.' }
+Write-Output 'ScanDot installed and launched.'

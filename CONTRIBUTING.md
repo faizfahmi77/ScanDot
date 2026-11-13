@@ -13,11 +13,10 @@ Android requires JDK 17 and Android SDK 36. From `android-app/`, run:
 On Windows, use `gradlew.bat` instead. To run the Python tests from the repository root, use Python 3.12:
 
 ```sh
-python -m pip install -r backend/requirements-lock.txt
 python -m unittest discover -s tests -v
 ```
 
-Use a virtual environment for Python dependencies. Tests exercise processing boundaries with synthetic fixtures; they do not establish geometric accuracy or cover live capture on a device.
+The Python tests use the standard library. Tests exercise processing boundaries with synthetic fixtures; they do not establish geometric accuracy or cover live capture on a device.
 
 ## Pull requests
 

@@ -14,6 +14,10 @@ The repository also contains a separate video photogrammetry pipeline that runs 
 
 This is an early prototype. Results can contain gaps, drift and noise; they are not textured meshes or validated measurements. Reflective, transparent and textureless subjects are difficult. Capture quality and device compatibility need further testing.
 
+## Try the preview
+
+Download the [preview APK](https://github.com/faizfahmi77/ScanDot/releases/tag/v0.3.0-preview.1). The release notes describe compatibility and signing limitations.
+
 ## Build the Android app
 
 You need JDK 17, Android SDK 36, and an Android device with ARCore Depth support. Camera permission is required; Google Play Services for AR may require installation or an update.
@@ -38,10 +42,9 @@ python -m processing.benchmark reconstruct "path/to/new-run" --colmap "path/to/c
 
 The output directory must not already exist. Omit `--dense` for a sparse-only run. See the subcommand `--help` output for options. A successful run does not establish complete or accurate geometry.
 
-To run the Python tests, create a virtual environment and install the test dependencies:
+The Python tests use the standard library:
 
 ```sh
-python -m pip install -r backend/requirements-lock.txt
 python -m unittest discover -s tests -v
 ```
 
@@ -50,7 +53,6 @@ python -m unittest discover -s tests -v
 ```text
 android-app/  Android capture, local storage and point-cloud viewer
 processing/   Video preparation and COLMAP orchestration
-backend/      Optional local workstation service
 tests/        Python tests with synthetic fixtures
 tools/        Workstation utilities
 ```

@@ -1,1 +1,0 @@
-"""RoomScan workstation service."""

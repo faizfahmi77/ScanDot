@@ -7,9 +7,6 @@ import android.util.AtomicFile
 import org.json.JSONArray
 import org.json.JSONObject
 import java.io.File
-import java.net.HttpURLConnection
-import java.net.URI
-import java.net.URL
 import java.util.UUID
 
 data class Scan(
@@ -86,62 +83,4 @@ class ScanStore(private val context: Context) {
         } ?: error("This video could not be opened. Choose it again.")
     }
     fun freeBytes() = dir.usableSpace
-}
-
-data class Connection(val url: String = "http://127.0.0.1:8765", val token: String = "")
-fun validServer(value: String): String {
-    val uri = URI(value.trim())
-    require(uri.scheme in listOf("http", "https") && !uri.host.isNullOrBlank() && uri.userInfo == null && uri.query == null && uri.fragment == null) {
-        "Enter an http:// or https:// server address without credentials or query parameters."
-    }
-    return value.trim().trimEnd('/')
-}
-
-class Api(private val connection: Connection) {
-    private fun open(path: String, method: String = "GET"): HttpURLConnection {
-        val conn = URL(validServer(connection.url) + path).openConnection() as HttpURLConnection
-        conn.requestMethod = method; conn.connectTimeout = 12_000; conn.readTimeout = 90_000
-        conn.instanceFollowRedirects = false
-        if (connection.token.isNotBlank()) conn.setRequestProperty("Authorization", "Bearer ${connection.token}")
-        conn.setRequestProperty("Accept", "application/json")
-        return conn
-    }
-    private fun response(conn: HttpURLConnection): JSONObject {
-        val code = conn.responseCode
-        val body = (if (code in 200..299) conn.inputStream else conn.errorStream)?.bufferedReader()?.use { it.readText() }.orEmpty()
-        if (code !in 200..299) {
-            val detail = runCatching { JSONObject(body).optString("detail") }.getOrDefault("")
-            error(if (code == 401 || code == 403) "Access denied. Check the token in Settings." else "Server $code: ${detail.take(500).ifBlank { "Request failed" }}")
-        }
-        return JSONObject(body)
-    }
-    fun request(path: String, method: String = "GET"): JSONObject {
-        val conn = open(path, method)
-        return try { if (method == "POST") { conn.doOutput = true; conn.setFixedLengthStreamingMode(0); conn.outputStream.close() }; response(conn) }
-        finally { conn.disconnect() }
-    }
-    fun upload(scan: Scan, file: File, progress: (Float) -> Unit): JSONObject {
-        require(file.exists() && file.length() > 0) { "The saved video is missing." }
-        val boundary = "RoomScan${UUID.randomUUID()}"
-        val fields = linkedMapOf("client_id" to scan.id, "project" to scan.project, "location" to scan.location, "label" to scan.label, "dense" to scan.dense.toString())
-        val prefix = buildString {
-            fields.forEach { (key, value) -> append("--$boundary\r\nContent-Disposition: form-data; name=\"$key\"\r\n\r\n$value\r\n") }
-            append("--$boundary\r\nContent-Disposition: form-data; name=\"file\"; filename=\"${scan.id}.mp4\"\r\nContent-Type: video/mp4\r\n\r\n")
-        }.toByteArray()
-        val suffix = "\r\n--$boundary--\r\n".toByteArray()
-        val conn = open("/api/jobs", "POST")
-        conn.doOutput = true; conn.setRequestProperty("Content-Type", "multipart/form-data; boundary=$boundary")
-        conn.setFixedLengthStreamingMode(prefix.size.toLong() + file.length() + suffix.size)
-        return try {
-            conn.outputStream.use { out ->
-                out.write(prefix)
-                file.inputStream().use { input ->
-                    val buffer = ByteArray(256 * 1024); var sent = 0L
-                    while (true) { val n = input.read(buffer); if (n < 0) break; out.write(buffer, 0, n); sent += n; progress(sent.toFloat() / file.length()) }
-                }
-                out.write(suffix)
-            }
-            response(conn)
-        } finally { conn.disconnect() }
-    }
 }
